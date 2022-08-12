@@ -131,17 +131,39 @@ function displayLoading(loading, tag) {
 }
 
 function loadCourses() {
+	// On click of search button, gather data and send to parsing function
 	$('.holberton_school-icon-search_1').click(() => {
+		// Clear existing data
 		$('#form').empty();
+
+		// Save current data in object
 		const search_terms = {
 			"search": $('#search').val().toLowerCase(),
 			"topic": $('#topic').find(':selected').attr('value'),
 			"sort": $('#sort').find(':selected').attr('value')
 		}
-		let videos = [];
+		compareFormData(search_terms);
+	});
+
+	// If user presses "enter" in input field, same as button click and will trigger search
+	$('#search').keypress(function (e) {
+		if (e.which === 13) {
+			$('.holberton_school-icon-search_1').click();
+		}
+	});
+
+	// Any changes to dropdowns will also trigger search
+	$('#sort').change(() => $('.holberton_school-icon-search_1').click());
+	$('#topic').change(() => $('.holberton_school-icon-search_1').click());
+}
+
+function compareFormData(search) {
+	// Compares data in search to data in api
+	let videos = [];
 	$.ajax({
 		type: 'GET',
 		url: 'https://smileschool-api.hbtn.info/courses',
+		// Before - show carousel
 		beforeSend: (()=> displayLoading(1, '#form')),
 		success: (allVideos) => {
 			for (let video of allVideos.courses) {
@@ -156,7 +178,7 @@ function loadCourses() {
 				}
 			}
 			// Sort data by search term and add to DOM in order
-			sortCourses(videos, search.sort);
+			sortFormData(videos, search.sort);
 			// Find total number of items in search to add on complete
 			num = videos.length;
 		},
@@ -167,32 +189,21 @@ function loadCourses() {
 			displayLoading(0, '#form');
 		})
 	})
-	});
-
-	// If user presses "enter" 
-	$('#search').keypress(function (e) {
-		if (e.which === 13) {
-			$('.holberton_school-icon-search_1').click();
-		}
-	});
-
-	// changes to dropdowns will trigger search
-	$('#sort').change(() => $('.holberton_school-icon-search_1').click());
-	$('#topic').change(() => $('.holberton_school-icon-search_1').click());
 }
 
-function sortCourses(videos, search) {
-	// Most Popular
+function sortFormData(videos, search) {
+	// Sort by "most popular"
 	if (search === '1') {
 		videos.sort((a, b)=> b.star - a.star)
-	// Most Recent
+	// Sort by "most recent"
 	} else if (search === '2') {
 		videos.sort((a, b)=> b.published_at - a.published_at)
-	// Most Viewed
+	// Sort by "most viewed"
 	} else {
 		videos.sort((a, b)=> b.views - a.views)
 	}
-	// For each video, send data to showData and addStars
+
+	// For each video, send data to showData and includeStars
 	for (let video of videos) {
 		addFormData(video);
 		addStars(video, `form${video.id}`);
@@ -200,6 +211,7 @@ function sortCourses(videos, search) {
 }
 
 function addFormData(data) {
+	// Add html to .form div including dynamic data
 	$('#form').append(`<div class="col my-3" id="form${data.id}">
 		<img class="card-img-top" src="${data.thumb_url}" alt="">
 		<div class="card-body">
